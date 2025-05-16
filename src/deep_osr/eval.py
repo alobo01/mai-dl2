@@ -14,9 +14,9 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 # Assuming these modules are in paths recognizable by Python (e.g. in src/ and PYTHONPATH includes src root)
-from data.dataset import OpenSetDataModule # If eval.py is in src/, then from .data.dataset
-from train_module import OpenSetLightningModule # from .train_module
-from utils.seed import seed_everything # from .utils.seed
+from deep_osr.data.dataset import OpenSetDataModule # If eval.py is in src/, then from .data.dataset
+from deep_osr.train_module import OpenSetLightningModule # from .train_module
+from deep_osr.utils.seed import seed_everything # from .utils.seed
 
 
 # Custom metric function from blueprint, refined version

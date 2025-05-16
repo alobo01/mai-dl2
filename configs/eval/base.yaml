@@ -1,0 +1,50 @@
+# Default configuration for evaluation (eval.py)
+
+# --- Parameters for locating the trained model ---
+run_id: null # REQUIRED (unless checkpoint_path is absolute and contains all info).
+             # Specifies the ID (folder name, e.g., "2024-01-15_10-30-00") of the training run.
+             # eval.py will look for this folder under ${outputs_root_dir}/runs/${eval.run_id}.
+             # The training configuration and checkpoints will be loaded from there.
+             # Can be overridden via CLI: eval.run_id=YYYY-MM-DD_HH-MM-SS
+
+checkpoint_path: null # Optional. Path to a specific model checkpoint (.ckpt file).
+                      # If null, eval.py will try to find 'last.ckpt' or the 'best' checkpoint
+                      # within the specified 'run_id's' checkpoint directory.
+                      # If run_id is also null, this path *must* be provided and should be absolute
+                      # or relative to the execution directory of eval.py.
+
+# --- Evaluation process parameters ---
+batch_size: 256 # Batch size for running inference during evaluation.
+                # Should ideally match or be compatible with GPU memory.
+
+save_scores: True # If True, save detailed scores (probabilities, OSR scores, labels, etc.)
+                  # to a .pkl file. This file is used by the plotting scripts.
+                  # Output: ${run_dir}/eval_outputs/scores_${eval.run_id_or_ckpt_name}.pkl
+
+save_features_for_tsne: True # If True (and save_scores is True), extract and save the
+                             # embeddings (output of the model's neck) to the .pkl file.
+                             # These features are used for generating t-SNE plots.
+                             # Setting to False can save disk space and processing time if t-SNE is not needed.
+
+# --- Optional: Override specific model/data parameters for evaluation ---
+# These are typically inherited from the training run's configuration.
+# However, you could override them here if necessary for a specific evaluation scenario.
+# Example:
+# model:
+#   # If you need to force a specific setting for the OSR head during evaluation
+#   osr_head:
+#     type: ${model.osr_head.type} # Keep from training
+#     # some_eval_specific_param: value
+
+# dataset:
+#   # If you need to evaluate on a different set of unknown classes than trained for,
+#   # this would be more complex and likely require a different dataset config entirely.
+#   # For standard evaluation, these are inherited.
+#   num_workers: ${dataset.num_workers} # Inherit from training dataset config for consistency
+
+
+# --- Hydra settings specific to the eval.py execution itself ---
+# These are usually handled by the top-level config.yaml or CLI overrides.
+# hydra:
+#   run:
+#     dir: ${outputs_root_dir}/evals/${now:%Y-%m-%d_%H-%M-%S}_${eval.run_id} # Where eval.py's own logs go

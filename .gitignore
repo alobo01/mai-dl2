@@ -12,6 +12,7 @@ build/
 # Data - specific to this project
 data/raw/
 data/processed/
+tests/temp_test_data/
 # data/splits/ # Committing example splits might be okay, but generally data-derived
 
 # Outputs
@@ -22,7 +23,10 @@ saved_models/
 *.pkl
 *.json # Except for configs or committed metadata
 
+
+
 # IDE / OS files
 .vscode/
 .idea/
 .DS_Store
+

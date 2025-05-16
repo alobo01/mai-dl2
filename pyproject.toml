@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]        # what to install before build :contentReference[oaicite:6]{index=6}
+build-backend = "setuptools.build_meta"       # which backend to use :contentReference[oaicite:7]{index=7}
+
+[project]
+name = "deep_osr"                             # your package name
+version = "0.1.0"                             # current version
+description = "Deep Open Set Recognition"     # short description
+readme = "README.md"                          # path to long description
+requires-python = ">=3.8"                     # supported Python versions
+dependencies = [                              # run-time dependencies
+  "torch>=1.10.0",
+  "torchvision>=0.11.0",
+  "pytorch-lightning>=1.5.0",
+  "hydra-core>=1.1.0",
+  "scikit-learn>=1.0.0",
+  "matplotlib>=3.4.0",
+  "seaborn>=0.11.0",
+  "timm>=0.5.0",
+  "PyYAML>=5.4.0",
+  "omegaconf>=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [ "pytest>=7.0.0" ]                     # extras for dev/testing
+
+[project.scripts]
+osr_train = "train:main"                      # console entry points
+osr_eval  = "eval:main"
+
+[tool.setuptools.package-dir]                 # tell setuptools where code lives :contentReference[oaicite:8]{index=8}
+"" = "src"
+
+[tool.setuptools.packages.find]               # discover all packages under src/ :contentReference[oaicite:9]{index=9}
+where = ["src"]

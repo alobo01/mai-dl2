@@ -1,0 +1,51 @@
+# Configuration for a ResNet50 backbone with an Energy-based OSR head.
+# This file is referenced by experiment configs, e.g., cifar10_resnet50_energy.yaml
+
+type: "resnet50_energy" # A friendly name for this model configuration
+
+# Embedding dimension after the neck. This is the input dimension for
+# both the classifier head and the OSR head.
+d_embed: 512
+
+backbone:
+  name: "resnet50"          # Specifies the ResNet50 architecture.
+                           # Other options: "efficientnet_b4", "vit_b16", "dino_v2_vitb14", etc.
+  pretrained: True         # Load weights pre-trained on ImageNet.
+  frozen: False            # If True, backbone weights are frozen (not trained).
+                           # If False, backbone weights are fine-tuned.
+  num_output_features: 2048 # For ResNet50, the output feature dimension before the final FC layer is 2048.
+                           # This will be used as `in_features` for the neck.
+                           # If set to null, backbone.py would try to infer it. Explicit is safer.
+
+neck:
+  # The neck reduces the backbone's output width and applies normalization/activation.
+  in_features: ${model.backbone.num_output_features} # Input features from the backbone.
+  out_features: ${model.d_embed}                     # Output features, matching d_embed.
+  use_batchnorm: True      # Apply BatchNorm1d after the linear layer in the neck.
+  use_relu: True           # Apply ReLU activation after BatchNorm in the neck.
+  # arc_margin: null         # Placeholder if ArcMargin or similar metric learning components were to be added.
+
+cls_head: # Classifier head for K seen (known) classes.
+  in_features: ${model.d_embed}           # Input features from the neck.
+  # num_classes: ${dataset.num_known_classes} # Number of known classes. This is typically defined
+                                           # in the dataset config and interpolated there or in the
+                                           # main experiment config. It's good practice to ensure
+                                           # this is set correctly by the dataset config.
+                                           # If an experiment overrides dataset.num_known_classes, this will pick it up.
+  use_weight_norm: True    # Apply weight normalization to the linear layer of the classifier.
+  label_smoothing: 0.0     # Label smoothing factor for CrossEntropyLoss (0.0 means no smoothing).
+                           # Can be overridden by experiment config, e.g., 0.1.
+  temperature: 1.0         # Temperature scaling for logits during training/inference (T in L/T).
+                           # Note: A separate calibration temperature is learned post-training.
+                           # This one is for the model's own scaling if desired.
+
+osr_head: # Open-Set Recognition head configuration.
+  type: "energy"           # Specifies the Energy-based OSR head.
+                           # Other options: "openmax", "kplus1".
+  in_features: ${model.d_embed} # Input features from the neck.
+  # For the "energy" type as implemented (EnergyOSRHead: nn.Linear(d_embed, 1)):
+  # No further specific parameters are needed here beyond in_features.
+  # The EnergyOSRHead is a simple linear layer mapping embeddings to a scalar energy value.
+  # The interpretation of this energy (e.g., higher = more unknown) depends on
+  # how it's used in the loss function or for OSR scoring.
+  # The `_get_osr_score_from_outputs` method in `OpenSetLightningModule` standardizes this.

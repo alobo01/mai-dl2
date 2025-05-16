@@ -16,7 +16,7 @@ def get_git_hash():
     except Exception:
         return "git_not_available"
 
-@hydra.main(config_path="../configs", config_name="config", version_base=None)
+@hydra.main(config_path="../../configs", config_name="config", version_base=None)
 def main(cfg: DictConfig) -> None:
     seed_everything(cfg.seed)
     

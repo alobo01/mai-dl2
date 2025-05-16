@@ -6,7 +6,7 @@ optimizer:
 scheduler: # Optional
   name: "CosineAnnealingLR" # StepLR, CosineAnnealingLR
   params:
-    T_max: ${trainer.max_epochs} # Total number of epochs
+    T_max: 50 # Total number of epochs
 
 trainer:
   max_epochs: 50
