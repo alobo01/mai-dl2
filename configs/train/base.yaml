@@ -1,0 +1,26 @@
+optimizer:
+  name: "AdamW" # Adam, AdamW, SGD
+  lr: 1e-4
+  weight_decay: 1e-5
+
+scheduler: # Optional
+  name: "CosineAnnealingLR" # StepLR, CosineAnnealingLR
+  params:
+    T_max: ${trainer.max_epochs} # Total number of epochs
+
+trainer:
+  max_epochs: 50
+  gpus: 1 # or [0], or null for CPU
+  precision: 32 # 16 for mixed precision
+  # check_val_every_n_epoch: 1
+  # deterministic: True # Ensure reproducibility
+
+loss:
+  ce_seen_weight: 1.0
+  # dummy_loss_weight: 0.0 # For K+1 OSR head if outlier data is used
+  # center_loss_weight: 0.0
+  # reg_loss_weight: 0.0
+
+calibration:
+  method: "temperature_scaling" # null, temperature_scaling, platt_binning
+  val_fraction_for_calibration: 0.2 # Fraction of val set for calibration

@@ -1,0 +1,34 @@
+# This is a Hydra multirun configuration, not a separate file usually.
+# It's used on the command line with `python -m src.train -m ...`
+# Example command for sweeping:
+# python -m src.train -m \
+#   model.backbone.name=resnet50,vit_b16 \
+#   model.osr_head.type=energy,kplus1 \
+#   train.optimizer.lr=1e-3,1e-4 \
+#   +experiment=cifar10_resnet50_energy # Base experiment to inherit from, if any
+
+# If you want to define a sweep in a YAML file for Hydra to pick up,
+# you might create a custom launcher or use a more advanced setup.
+# The basic Hydra multirun is via CLI arguments as above.
+
+# For a structured sweep definition file (e.g. if using Optuna sweeper plugin for Hydra):
+# defaults:
+#   - override hydra/sweeper: optuna # Example for Optuna
+# 
+# hydra:
+#   sweeper:
+#     study_name: osr_optimization
+#     direction: maximize
+#     n_trials: 50
+#     sampler:
+#       _target_: optuna.samplers.TPESampler
+#       seed: 123
+#     params:
+#       model.d_embed: choice(256, 512, 1024)
+#       train.optimizer.lr: interval(0.00001, 0.001) # loguniform(1e-5, 1e-3) with older Optuna/Hydra
+#       model.backbone.name: choice("resnet50", "efficientnet_b4")
+#       model.osr_head.type: choice("energy", "kplus1")
+
+# The prompt's sweep.yaml seems more like a placeholder for where such a config would go.
+# The provided example `python -m src.train -m model.backbone=resnet50,vit_b16 ...` is the standard Hydra way.
+# So, this file could just contain a comment explaining how to sweep.

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.env
+.venv/
+venv/
+dist/
+build/
+
+# Data - specific to this project
+data/raw/
+data/processed/
+# data/splits/ # Committing example splits might be okay, but generally data-derived
+
+# Outputs
+outputs/
+saved_models/
+*.pt
+*.ckpt
+*.pkl
+*.json # Except for configs or committed metadata
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store

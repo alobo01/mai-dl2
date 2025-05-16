@@ -1,0 +1,26 @@
+defaults:
+  - dataset: cifar10_8k_2u # 8 known, 2 unknown
+  - model: resnet50_energy
+  - train: base
+  - eval: base
+  - experiment: null # Allows defining full experiments in separate files
+  - _self_
+
+hydra:
+  run:
+    dir: ${outputs_root_dir}/runs/${now:%Y-%m-%d_%H-%M-%S}
+  job_logging:
+    root:
+      level: INFO
+  hydra_logging:
+    root:
+      level: INFO
+  sweep: # Basic configuration for Hydra's built-in sweeper
+    dir: ${outputs_root_dir}/multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+
+
+# Global settings
+seed: 42
+outputs_root_dir: "outputs" # Base for plots, metrics beyond hydra's current run dir
+data_root_dir: "data/processed" # Or wherever CIFAR10 etc. will be downloaded/stored by torchvision

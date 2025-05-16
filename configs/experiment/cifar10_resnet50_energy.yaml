@@ -1,0 +1,14 @@
+# @package _group_
+defaults:
+  - override /dataset: cifar10_8k_2u
+  - override /model: resnet50_energy
+  - override /train: base # Or specific training params for this experiment
+  - override /eval: base
+
+# Experiment specific overrides:
+# model:
+#   backbone:
+#     frozen: True # Example override
+# train:
+#   trainer:
+#     max_epochs: 10
