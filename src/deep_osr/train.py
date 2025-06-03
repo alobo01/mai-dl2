@@ -70,7 +70,7 @@ def main(cfg: DictConfig) -> None:
     trainer = pl.Trainer(
         max_epochs=cfg.train.trainer.max_epochs,
         accelerator="gpu" if cfg.train.trainer.gpus > 0 else "cpu",
-        devices=cfg.train.trainer.gpus if cfg.train.trainer.gpus > 0 else None,
+        devices=cfg.train.trainer.gpus if cfg.train.trainer.gpus > 0 else 1,
         precision=cfg.train.trainer.precision,
         callbacks=callbacks,
         logger=pl.loggers.TensorBoardLogger(save_dir=run_dir, name="tb_logs", version=""), # Logs to <run_dir>/tb_logs
