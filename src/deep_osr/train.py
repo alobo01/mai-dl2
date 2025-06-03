@@ -6,9 +6,9 @@ import os
 import json
 import subprocess # For git hash
 
-from utils.seed import seed_everything
-from data.dataset import OpenSetDataModule
-from train_module import OpenSetLightningModule
+from deep_osr.utils.seed import seed_everything
+from deep_osr.data.dataset import OpenSetDataModule
+from deep_osr.train_module import OpenSetLightningModule
 
 def get_git_hash():
     try:
@@ -50,7 +50,7 @@ def main(cfg: DictConfig) -> None:
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(run_dir, "checkpoints"),
         filename='{epoch}-{val/auroc:.3f}-{val/acc_known:.3f}',
-        monitor='val/auroc', # Example: monitor AUROC on validation set
+        monitor='val/auroc', 
         mode='max',
         save_top_k=1,
         save_last=True
