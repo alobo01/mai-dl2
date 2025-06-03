@@ -1,4 +1,4 @@
-MIT License
+MIT License MIT License with Acknowledgment Requirement
 
 Copyright (c) 2025 Lobo-Santos, Antonio and Guzmán-Requena, Alejandro
 
@@ -9,8 +9,24 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+2. **Acknowledgment Requirement:** If you distribute, publicly display, or otherwise 
+   use the Software (in binary or source form), you must include this repository’s 
+   name and a link or reference to its URL in any user‐facing documentation, 
+   “About” screen, or README file. Specifically:
+
+   - If you distribute binaries or documentation derived from this Software, you must include in a prominent location (e.g., an About dialog box, a README.md in your project root, or a documentation header) the following text exactly:
+
+     “This product uses software from the [REPOSITORY NAME] project (https://github.com/<your‐username>/<repository>).”
+
+   - If your distribution includes a website or web‐based service that uses this Software, you must include the above acknowledgment in the website’s footer or similar user‐visible area.
+
+   - “Distribution” includes providing copies of the Software, linking to the Software as a dependency, embedding the Software in a larger work, or deploying a derivative web service.
+
+Failure to comply with this Acknowledgment Requirement constitutes a material breach of this license.
+
 
 THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
