@@ -12,7 +12,7 @@ A comprehensive, modular, and highly configurable PyTorch Lightning framework fo
 > **Open-Set Recognition (OSR)**: The ability of a model to identify inputs from unknown classes not seen during training, while still correctly classifying known classes.
 
 <div align="center">
-  <img src="https://via.placeholder.com/800x400?text=Deep+OSR+Framework+Overview" alt="Deep OSR Framework Overview" width="700px"/>
+  <img src="diagram.png" alt="Deep OSR Framework Overview" width="700px"/>
 </div>
 
 ## Features
