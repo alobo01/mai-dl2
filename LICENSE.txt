@@ -19,7 +19,7 @@ furnished to do so, subject to the following conditions:
 
    - If you distribute binaries or documentation derived from this Software, you must include in a prominent location (e.g., an About dialog box, a README.md in your project root, or a documentation header) the following text exactly:
 
-     “This product uses software from the [REPOSITORY NAME] project (https://github.com/<your‐username>/<repository>).”
+     “This product uses software from the [Deep OSR Framework] project (https://github.com/alobo01/mai-dl2).”
 
    - If your distribution includes a website or web‐based service that uses this Software, you must include the above acknowledgment in the website’s footer or similar user‐visible area.
 
