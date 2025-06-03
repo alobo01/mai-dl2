@@ -409,7 +409,7 @@ If you find this framework useful in your research, please consider citing:
   author = {Lobo-Santos, Antonio and Guzmán-Requena, Alejandro},
   title = {Deep Open-Set Recognition Framework},
   year = {2025},
-  url = {https://github.com/yourusername/deep-osr},
+  url = {https://github.com/alobo01/mai-dl2},
 }
 ```
 
