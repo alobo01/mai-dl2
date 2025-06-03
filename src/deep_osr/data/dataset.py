@@ -125,11 +125,11 @@ class OpenSetDataModule(pl.LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset_full, batch_size=self.cfg.batch_size, shuffle=True, num_workers=self.cfg.num_workers, pin_memory=True, persistent_workers=True if self.cfg.num_workers > 0 else False)
+        return DataLoader(self.train_dataset_full, batch_size=self.cfg.batch_size, shuffle=True, num_workers=self.cfg.num_workers, pin_memory=True,persistent_workers=True if self.cfg.num_workers > 0 else False)
 
     def val_dataloader(self):
         # This dataloader will provide batches with mixed known/unknown samples for OSR evaluation during training
-        return DataLoader(self.val_dataset_full, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True)zed
+        return DataLoader(self.val_dataset_full, batch_size=self.cfg.batch_size, num_workers=self.cfg.num_workers, pin_memory=True,persistent_workers=True if self.cfg.num_workers > 0 else False)
 
     def test_dataloader(self):
         # For eval.py, we want separate evaluation on knowns and unknowns, then combine results.
