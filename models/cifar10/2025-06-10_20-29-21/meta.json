@@ -1,0 +1,5 @@
+{
+  "git_hash": "97c4fd2dfadc48bf10460622b8122ca2619ed3c2",
+  "hydra_run_dir": "outputs/runs/2025-06-10_20-29-21",
+  "command": "experiment=cifar10_resnet50_energy"
+}

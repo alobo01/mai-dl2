@@ -1,14 +1,27 @@
-# @package _group_
+# @package _global_
 defaults:
   - override /dataset: cifar10_8k_2u
   - override /model: resnet50_energy
-  - override /train: base # Or specific training params for this experiment
+  - override /train: base
   - override /eval: base
 
-# Experiment specific overrides:
-# model:
-#   backbone:
-#     frozen: True # Example override
-# train:
-#   trainer:
-#     max_epochs: 10
+# Experiment specific overrides for CIFAR-10:
+model:
+  backbone:
+    num_output_features: 2048  # ResNet50 output
+  cls_head:
+    label_smoothing: 0.05  # Light smoothing for CIFAR-10
+  d_embed: 512
+
+train:
+  optimizer:
+    lr: 1e-3  # Standard learning rate for CIFAR-10
+  trainer:
+    max_epochs: 50  # More epochs for CIFAR-10
+    gpus: 1  # Use GPU
+  loss:
+    ce_seen_weight: 1.0
+
+dataset:
+  batch_size: 128  # Larger batch size for smaller CIFAR-10 images
+  img_size: 32    # 32x32 images for CIFAR-10

@@ -1,0 +1,68 @@
+dataset:
+  name: cifar10
+  path: ${data_root_dir}/cifar10
+  num_classes: 10
+  known_classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  unknown_classes:
+  - 8
+  - 9
+  num_known_classes: 8
+  img_size: 32
+  batch_size: 128
+  num_workers: 4
+model:
+  type: resnet50_energy
+  d_embed: 512
+  backbone:
+    name: resnet50
+    pretrained: true
+    frozen: false
+    num_output_features: 2048
+  neck:
+    in_features: ${model.backbone.num_output_features}
+    out_features: ${model.d_embed}
+    use_batchnorm: true
+    use_relu: true
+  cls_head:
+    in_features: ${model.d_embed}
+    use_weight_norm: true
+    label_smoothing: 0.0
+    temperature: 1.0
+  osr_head:
+    type: energy
+    in_features: ${model.d_embed}
+train:
+  optimizer:
+    name: AdamW
+    lr: 0.0001
+    weight_decay: 1.0e-05
+  scheduler:
+    name: CosineAnnealingLR
+    params:
+      T_max: 50
+  trainer:
+    max_epochs: 50
+    gpus: 1
+    precision: 32
+  loss:
+    ce_seen_weight: 1.0
+  calibration:
+    method: temperature_scaling
+    val_fraction_for_calibration: 0.2
+eval:
+  run_id: 2025-06-04_18-31-40
+  checkpoint_path: null
+  batch_size: 256
+  save_scores: true
+  save_features_for_tsne: true
+seed: 42
+outputs_root_dir: outputs
+data_root_dir: data/processed

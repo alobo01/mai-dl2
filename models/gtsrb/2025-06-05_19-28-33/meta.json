@@ -1,0 +1,5 @@
+{
+  "git_hash": "66eeccf8100a029741aac8afa3f5b4168cfc00ee",
+  "hydra_run_dir": "outputs/runs/2025-06-05_19-28-33",
+  "command": "experiment=gtsrb_resnet50_energy,train.trainer.max_epochs=50"
+}

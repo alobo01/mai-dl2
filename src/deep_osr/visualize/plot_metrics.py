@@ -2,10 +2,11 @@ import pickle
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import roc_curve, precision_recall_curve, auc
+from sklearn.metrics import roc_curve, precision_recall_curve, auc, confusion_matrix
 import pathlib
 import seaborn as sns
 from typing import Dict, Any
+import os
 
 def plot_roc_curve(y_true_is_unknown: np.ndarray, osr_scores: np.ndarray, save_to: str) -> float:
     """Plot ROC curve for unknown detection."""
@@ -95,6 +96,103 @@ def plot_confusion_matrix(y_true_is_known: np.ndarray, osr_scores: np.ndarray, t
     plt.savefig(save_to)
     plt.close()
 
+def plot_per_class_confusion_matrices(probs: np.ndarray, y_true: np.ndarray, is_known: np.ndarray, 
+                                    output_dir: str, dataset_name: str = ""):
+    """Plot confusion matrices for each individual known class."""
+    # Only use known samples for per-class analysis
+    known_mask = is_known
+    if not np.any(known_mask):
+        print("No known samples found for per-class confusion matrices.")
+        return
+    
+    probs_known = probs[known_mask]
+    y_true_known = y_true[known_mask]
+    
+    # Get predictions for known samples
+    y_pred_known = np.argmax(probs_known, axis=1)
+    
+    # Get unique classes
+    unique_classes = np.unique(y_true_known)
+    num_classes = len(unique_classes)
+    
+    if num_classes < 2:
+        print("Not enough classes for meaningful per-class confusion matrices.")
+        return
+    
+    # Create a directory for per-class matrices
+    per_class_dir = os.path.join(output_dir, "per_class_matrices")
+    os.makedirs(per_class_dir, exist_ok=True)
+    
+    # Overall confusion matrix for all known classes
+    cm_overall = confusion_matrix(y_true_known, y_pred_known, labels=unique_classes)
+    
+    plt.figure(figsize=(max(8, num_classes), max(6, num_classes)))
+    sns.heatmap(cm_overall, annot=True, fmt='d', cmap='Blues',
+                xticklabels=[f'Class {i}' for i in unique_classes],
+                yticklabels=[f'Class {i}' for i in unique_classes])
+    plt.title(f'Overall Confusion Matrix - Known Classes Only\n{dataset_name}')
+    plt.xlabel('Predicted Class')
+    plt.ylabel('True Class')
+    plt.tight_layout()
+    plt.savefig(os.path.join(per_class_dir, 'overall_known_classes_confusion_matrix.png'), 
+                dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Per-class accuracy and individual matrices
+    class_accuracies = []
+    
+    # Calculate per-class metrics
+    for class_idx in unique_classes:
+        # Binary classification: current class vs all others
+        y_true_binary = (y_true_known == class_idx).astype(int)
+        y_pred_binary = (y_pred_known == class_idx).astype(int)
+        
+        # Calculate confusion matrix for this class
+        cm_binary = confusion_matrix(y_true_binary, y_pred_binary, labels=[0, 1])
+        
+        # Calculate accuracy for this class
+        if np.sum(y_true_binary) > 0:  # Check if this class has any samples
+            class_accuracy = cm_binary[1, 1] / np.sum(y_true_binary) if np.sum(y_true_binary) > 0 else 0
+            class_accuracies.append((class_idx, class_accuracy))
+            
+            # Plot individual class confusion matrix
+            plt.figure(figsize=(6, 5))
+            sns.heatmap(cm_binary, annot=True, fmt='d', cmap='Blues',
+                        xticklabels=[f'Not Class {class_idx}', f'Class {class_idx}'],
+                        yticklabels=[f'Not Class {class_idx}', f'Class {class_idx}'])
+            plt.title(f'Class {class_idx} vs Others\nAccuracy: {class_accuracy:.3f}')
+            plt.xlabel('Predicted')
+            plt.ylabel('True')
+            plt.tight_layout()
+            plt.savefig(os.path.join(per_class_dir, f'class_{class_idx}_confusion_matrix.png'), 
+                        dpi=300, bbox_inches='tight')
+            plt.close()
+    
+    # Create a summary plot of per-class accuracies
+    if class_accuracies:
+        classes, accuracies = zip(*class_accuracies)
+        
+        plt.figure(figsize=(max(8, len(classes) * 0.8), 6))
+        bars = plt.bar(range(len(classes)), accuracies, color='skyblue', alpha=0.7)
+        plt.xlabel('Class')
+        plt.ylabel('Accuracy')
+        plt.title(f'Per-Class Accuracy\n{dataset_name}')
+        plt.xticks(range(len(classes)), [f'Class {c}' for c in classes], rotation=45)
+        plt.ylim(0, 1)
+        plt.grid(True, alpha=0.3)
+        
+        # Add value labels on bars
+        for i, (bar, acc) in enumerate(zip(bars, accuracies)):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{acc:.3f}', ha='center', va='bottom')
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(per_class_dir, 'per_class_accuracies.png'), 
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Generated per-class confusion matrices and accuracy summary in {per_class_dir}")
+
 def generate_all_plots(scores_pkl_path: str, metrics_json_path: str, output_dir: str):
     """Generate all evaluation plots from scores and metrics files."""
     # Create output directory
@@ -112,8 +210,21 @@ def generate_all_plots(scores_pkl_path: str, metrics_json_path: str, output_dir:
     osr_scores = np.array(scores_data['osr_scores'])
     is_known = np.array(scores_data['is_known']).astype(bool)
     y_true_is_unknown = ~is_known
+    probs = np.array(scores_data['probs'])
+    y_true = np.array(scores_data['y_true'])
     
-    # Generate plots
+    # Try to determine dataset name from the path
+    dataset_name = ""
+    path_parts = str(scores_pkl_path).split(os.sep)
+    for part in path_parts:
+        if 'cifar10' in part.lower():
+            dataset_name = "CIFAR-10"
+            break
+        elif 'gtsrb' in part.lower():
+            dataset_name = "GTSRB"
+            break
+    
+    # Generate existing plots
     plots_info = {
         'roc.png': lambda: plot_roc_curve(y_true_is_unknown, osr_scores, str(output_dir / 'roc.png')),
         'pr_curves.png': lambda: plot_pr_curves(y_true_is_unknown, osr_scores, str(output_dir / 'pr_curves.png')),
@@ -128,6 +239,13 @@ def generate_all_plots(scores_pkl_path: str, metrics_json_path: str, output_dir:
             print(f"Generated {plot_name}")
         except Exception as e:
             print(f"Error generating {plot_name}: {str(e)}")
+    
+    # Generate per-class confusion matrices
+    try:
+        plot_per_class_confusion_matrices(probs, y_true, is_known, str(output_dir), dataset_name)
+        print("Generated per-class confusion matrices")
+    except Exception as e:
+        print(f"Error generating per-class confusion matrices: {str(e)}")
 
 if __name__ == "__main__":
     import argparse
