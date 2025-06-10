@@ -1,7 +1,7 @@
 # Default configuration for evaluation (eval.py)
 
 # --- Parameters for locating the trained model ---
-run_id: null # REQUIRED (unless checkpoint_path is absolute and contains all info).
+run_id: "2025-06-04_18-46-39" # REQUIRED (unless checkpoint_path is absolute and contains all info).
              # Specifies the ID (folder name, e.g., "2024-01-15_10-30-00") of the training run.
              # eval.py will look for this folder under ${outputs_root_dir}/runs/${eval.run_id}.
              # The training configuration and checkpoints will be loaded from there.

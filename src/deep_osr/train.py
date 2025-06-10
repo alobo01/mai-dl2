@@ -121,7 +121,7 @@ def main(cfg: DictConfig) -> None:
             model_for_calibration = model
         else:
             print(f"Loading best model from: {best_model_path}")
-            model_for_calibration = OpenSetLightningModule.load_from_checkpoint(best_model_path, cfg=cfg)
+            model_for_calibration = OpenSetLightningModule.load_from_checkpoint(best_model_path)
 
         model_for_calibration.to(model.device)
         datamodule.setup(stage='validate') # Ensure calibration_dataloader (val_dataloader) is ready

@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from typing import List, Optional, Tuple
 import numpy as np
 from .transforms import get_transforms
+from .gtsrb_dataset import GTSRBDataset
 
 class OpenSetDataset(Dataset):
     def __init__(self, base_dataset, known_classes: List[int], unknown_classes: List[int],
@@ -73,6 +74,9 @@ class OpenSetDataModule(pl.LightningDataModule):
         if self.cfg.name == "cifar10":
             CIFAR10(self.cfg.path, train=True, download=True)
             CIFAR10(self.cfg.path, train=False, download=True)
+        elif self.cfg.name == "gtsrb":
+            GTSRBDataset(self.cfg.path, split='train', download=True)
+            GTSRBDataset(self.cfg.path, split='test', download=True)
         # Add other datasets here if needed
 
     def _filter_dataset_by_original_classes(self, dataset, target_classes):
@@ -83,6 +87,9 @@ class OpenSetDataModule(pl.LightningDataModule):
         if self.cfg.name == "cifar10":
             train_base = CIFAR10(self.cfg.path, train=True) # transform applied later
             test_base = CIFAR10(self.cfg.path, train=False)  # transform applied later
+        elif self.cfg.name == "gtsrb":
+            train_base = GTSRBDataset(self.cfg.path, split='train') # transform applied later
+            test_base = GTSRBDataset(self.cfg.path, split='test')  # transform applied later
         else:
             raise ValueError(f"Dataset {self.cfg.name} not supported yet.")
 

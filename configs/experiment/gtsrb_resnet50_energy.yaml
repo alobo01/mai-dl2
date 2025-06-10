@@ -1,0 +1,27 @@
+# @package _global_
+defaults:
+  - override /dataset: gtsrb_40k_3u
+  - override /model: resnet50_energy
+  - override /train: base
+  - override /eval: base
+
+# Experiment specific overrides for GTSRB:
+model:
+  backbone:
+    num_output_features: 2048  # ResNet50 output
+  cls_head:
+    label_smoothing: 0.1  # Slightly more smoothing for traffic signs
+  d_embed: 512
+
+train:
+  optimizer:
+    lr: 5e-4  # Slightly higher learning rate for GTSRB
+  trainer:
+    max_epochs: 30  # Fewer epochs needed for GTSRB
+    gpus: 1  # Use GPU now that CUDA is available
+  loss:
+    ce_seen_weight: 1.0
+
+dataset:
+  batch_size: 64  # Smaller batch size due to larger images
+  img_size: 64    # 64x64 images for GTSRB 

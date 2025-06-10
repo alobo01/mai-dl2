@@ -10,7 +10,7 @@ scheduler: # Optional
 
 trainer:
   max_epochs: 50
-  gpus: 0 # or [0], or null for CPU
+  gpus: 1 # or [0], or null for CPU
   precision: 32 # 16 for mixed precision
   # check_val_every_n_epoch: 1
   # deterministic: True # Ensure reproducibility

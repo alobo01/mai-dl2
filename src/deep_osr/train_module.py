@@ -10,6 +10,7 @@ from deep_osr.models.cls_head import ClassifierHead
 from deep_osr.models.osr_head import EnergyOSRHead, KPlus1OSRHead, OpenMaxOSRHead
 from deep_osr.losses.ce import get_loss_functions # Simpler: LabelSmoothingCrossEntropy directly
 from deep_osr.open_set_metrics import OpenSetMetrics
+from deep_osr.utils.calibration import calibrate_model_temperature
 
 class OpenSetLightningModule(pl.LightningModule):
     def __init__(self, cfg: DictConfig):

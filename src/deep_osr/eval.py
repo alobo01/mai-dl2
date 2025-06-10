@@ -17,6 +17,7 @@ from tqdm import tqdm
 from deep_osr.data.dataset import OpenSetDataModule # If eval.py is in src/, then from .data.dataset
 from deep_osr.train_module import OpenSetLightningModule # from .train_module
 from deep_osr.utils.seed import seed_everything # from .utils.seed
+from deep_osr.visualize.plot_metrics import generate_all_plots # Import the plotting function
 
 
 # Custom metric function from blueprint, refined version
@@ -114,7 +115,7 @@ def recall_at_fixed_precision(
     return recall_unknown
 
 
-@hydra.main(config_path="../configs", config_name="config", version_base=None)
+@hydra.main(config_path="../../configs", config_name="config", version_base=None)
 def main(cfg: DictConfig) -> None:
     seed_everything(cfg.seed)
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
@@ -161,13 +162,33 @@ def main(cfg: DictConfig) -> None:
         raise FileNotFoundError(f"Checkpoint {ckpt_path} does not exist.")
 
     # Load model
-    model = OpenSetLightningModule.load_from_checkpoint(ckpt_path, cfg=cfg_model_data)
+    model = OpenSetLightningModule.load_from_checkpoint(ckpt_path)
     model.eval()
-    device = torch.device("cuda" if cfg_model_data.train.trainer.gpus > 0 else "cpu")
+    
+    # Force CPU if CUDA is not available
+    try:
+        if torch.cuda.is_available() and cfg_model_data.train.trainer.gpus > 0:
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+    except:
+        device = torch.device("cpu")
+        
     model.to(device)
 
-    # Data module
-    datamodule = OpenSetDataModule(cfg_model_data.dataset)
+    # Data module - check if we want to override the dataset for evaluation
+    eval_dataset = getattr(cfg, 'dataset', None)
+    if eval_dataset and eval_dataset.name != cfg_model_data.dataset.name:
+        print(f"Using evaluation dataset: {eval_dataset.name} (original training dataset: {cfg_model_data.dataset.name})")
+        # Use the new dataset for evaluation but keep the model's number of classes
+        eval_cfg = cfg_model_data.copy()
+        eval_cfg.dataset = eval_dataset
+        # Ensure the model's classifier head matches the original dataset
+        datamodule = OpenSetDataModule(eval_cfg.dataset)
+    else:
+        print(f"Using original training dataset: {cfg_model_data.dataset.name}")
+        datamodule = OpenSetDataModule(cfg_model_data.dataset)
+    
     datamodule.prepare_data() # Downloads data if not present
 
     # MAV fitting for OpenMax (if applicable)
@@ -337,6 +358,11 @@ def main(cfg: DictConfig) -> None:
         with open(scores_pkl_filename, 'wb') as f:
             pickle.dump(scores_data_for_pkl, f)
         print(f"Scores for plotting saved to {scores_pkl_filename}")
+
+        # Generate evaluation plots
+        plots_dir = os.path.join(eval_output_dir, "plots")
+        generate_all_plots(scores_pkl_filename, metrics_filename, plots_dir)
+        print(f"Evaluation plots saved to {plots_dir}")
 
 if __name__ == "__main__":
     main()
