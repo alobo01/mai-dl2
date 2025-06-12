@@ -30,3 +30,4 @@ saved_models/
 .idea/
 .DS_Store
 
+*.ppm

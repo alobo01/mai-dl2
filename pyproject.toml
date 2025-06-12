@@ -28,6 +28,7 @@ dev = [ "pytest>=7.0.0" ]                     # extras for dev/testing
 [project.scripts]
 osr_train = "train:main"                      # console entry points
 osr_eval  = "eval:main"
+classic_train = "deep_osr.train_classic:main" # Added for classic training
 
 [tool.setuptools.package-dir]                 # tell setuptools where code lives :contentReference[oaicite:8]{index=8}
 "" = "src"

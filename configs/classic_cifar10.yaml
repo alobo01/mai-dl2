@@ -1,0 +1,58 @@
+dataset:
+  name: cifar10
+  path: ./data # Root path for datasets
+  img_size: 32
+  num_classes: 8 # Number of classes for model training (known classes)
+  total_original_classes: 10 # Total classes in the original CIFAR-10 dataset
+  known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7] # Example: first 8 classes are known
+  unknown_classes_original_ids: [8, 9] # Example: last 2 classes are unknown
+  batch_size: 128
+  num_workers: 4
+  val_split_ratio: 0.2 # Proportion of training data to use for validation
+
+model:
+  type: "efficientnet_b4_classic" # Model identifier
+  d_embed: 512 
+
+  backbone:
+    name: "efficientnet_b4"
+    pretrained: True
+    frozen: False
+    num_output_features: 1792 # For efficientnet_b4
+
+  cls_head:
+    in_features: ${model.backbone.num_output_features} 
+    # num_classes: ${dataset.num_classes} # Automatically taken from dataset.num_classes (e.g., 8)
+    use_weight_norm: True
+    label_smoothing: 0.1
+    temperature: 1.0
+
+train:
+  optimizer:
+    name: "AdamW"
+    lr: 0.003
+    weight_decay: 0.01
+  
+  trainer:
+    max_epochs: 50
+    gpus: 0 
+    precision: 32 
+    deterministic: True
+    # enable_early_stopping: True
+    # early_stopping_monitor: "val/acc" # or "val/f1_macro" if using that
+    # early_stopping_patience: 10
+    # early_stopping_mode: "max"
+  
+  run_test_after_train: True
+  run_custom_evaluation_after_train: True # Enable the detailed evaluation
+
+seed: 42
+outputs_root_dir: "outputs" 
+data_root_dir: "data/processed"
+
+hydra:
+  run:
+    dir: ${outputs_root_dir}/runs/classic_cifar10_eval/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: ${outputs_root_dir}/multirun/classic_cifar10_eval/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}

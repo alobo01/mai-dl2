@@ -1,0 +1,77 @@
+dataset:
+  name: cifar10 # or gtsrb
+  path: ./data # Root path for datasets
+  img_size: 32
+  num_classes: 8 # Number of classes for model training (known classes)
+  total_original_classes: 10 # Total classes in the original dataset (e.g., 10 for CIFAR-10)
+  known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7] # Original IDs of known classes
+  unknown_classes_original_ids: [8, 9] # Original IDs of unknown classes
+  batch_size: 128
+  num_workers: 4
+  val_split_ratio: 0.2 # Proportion of training data to use for validation
+  # val_fallback_test_samples: 1000 # Used if val_split_ratio is 0
+
+model:
+  type: "efficientnet_b4_classic" # Model identifier
+  d_embed: 512 # Embedding dimension after neck (if neck is used)
+
+  backbone:
+    name: "efficientnet_b4"
+    pretrained: True
+    frozen: False
+    num_output_features: 1792 # For efficientnet_b4
+
+  # Neck is optional for classic training. If not needed, remove this section or set to null.
+  # If neck is removed from here, ClassicLightningModule will use nn.Identity().
+  # neck:
+  #   in_features: ${model.backbone.num_output_features}
+  #   out_features: ${model.d_embed}
+  #   use_batchnorm: True
+  #   use_relu: True
+
+  cls_head:
+    in_features: ${model.backbone.num_output_features} # Or ${model.d_embed} if neck is used
+    # num_classes: ${dataset.num_classes} # This will now correctly use the (e.g.) 8 training classes
+    use_weight_norm: True
+    label_smoothing: 0.1
+    temperature: 1.0
+
+
+train:
+  optimizer:
+    name: "AdamW"
+    lr: 0.003
+    weight_decay: 0.01
+  
+  # Scheduler is optional
+  # scheduler:
+  #   name: "CosineAnnealingLR"
+  #   params:
+  #     T_max: 100 # Typically max_epochs
+  #     eta_min: 0.00001
+
+  trainer:
+    max_epochs: 50
+    gpus: 0 # Number of GPUs, 0 for CPU
+    precision: 32 # 16 for mixed precision
+    deterministic: True
+    # enable_early_stopping: True
+    # early_stopping_monitor: "val/acc"
+    # early_stopping_patience: 10
+    # early_stopping_mode: "max"
+  
+  run_test_after_train: True
+  run_custom_evaluation_after_train: True # New flag to enable custom eval
+
+
+seed: 42 # For reproducibility
+outputs_root_dir: "outputs" # Base for plots, metrics beyond hydra's current run dir
+data_root_dir: "data/processed" # Or wherever CIFAR10 etc. will be downloaded/stored by torchvision
+# Hydra specific settings
+hydra:
+  run:
+    # This default dir will be created but we use a custom one in the script
+    dir: outputs/runs/classic_cifar
+  sweep:
+    dir: outputs/multirun/classic_cifar
+    subdir: ${hydra.job.num}
