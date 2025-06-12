@@ -1,0 +1,39 @@
+\documentclass{article}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\title{Known Class Performance (Validation Known)}
+\date{\today}
+\author{Automated Report}
+\begin{document}
+\maketitle
+\section*{Per-Class Performance}
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & Accuracy & Precision & Recall & F1-score & Support & Avg Max Softmax & Avg Entropy \\
+Original Class ID &  &  &  &  &  &  &  \\
+\midrule
+0 & 0.965 & 0.974 & 0.965 & 0.969 & 996 & 0.868 & 0.593 \\
+1 & 0.998 & 0.986 & 0.998 & 0.992 & 1033 & 0.900 & 0.488 \\
+2 & 0.944 & 0.957 & 0.944 & 0.950 & 1003 & 0.880 & 0.541 \\
+3 & 0.939 & 0.921 & 0.939 & 0.930 & 1034 & 0.877 & 0.534 \\
+4 & 0.961 & 0.938 & 0.961 & 0.949 & 976 & 0.874 & 0.565 \\
+5 & 0.937 & 0.946 & 0.937 & 0.942 & 954 & 0.864 & 0.575 \\
+6 & 0.957 & 0.987 & 0.957 & 0.972 & 979 & 0.898 & 0.469 \\
+7 & 0.975 & 0.971 & 0.975 & 0.973 & 992 & 0.897 & 0.493 \\
+\bottomrule
+\end{tabular}
+\section*{Summary Metrics (Mean $\pm$ Std)}
+\begin{tabular}{rrrrrrrrrrrrr}
+\toprule
+Mean Accuracy & Std Accuracy & Mean Precision & Std Precision & Mean Recall & Std Recall & Mean F1-score & Std F1-score & Mean Avg Max Softmax & Std Avg Max Softmax & Mean Avg Entropy & Std Avg Entropy & Overall Accuracy \\
+\midrule
+0.960 & 0.019 & 0.960 & 0.022 & 0.960 & 0.019 & 0.960 & 0.019 & 0.882 & 0.013 & 0.532 & 0.042 & 0.960 \\
+\bottomrule
+\end{tabular}
+\end{document}
+\section*{Observations on Difficult Classes}
+The class with the lowest accuracy is Original ID 5 (Accuracy: 0.937).
+All classes have recall above {low_recall_threshold}.
+All classes have precision above {low_precision_threshold}.
+\end{document}

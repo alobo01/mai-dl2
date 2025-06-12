@@ -1,0 +1,2 @@
+[2025-06-12 15:40:12,041][timm.models._builder][INFO] - Loading pretrained weights from Hugging Face hub (timm/efficientnet_b4.ra2_in1k)
+[2025-06-12 15:40:15,715][timm.models._hub][INFO] - [timm/efficientnet_b4.ra2_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.

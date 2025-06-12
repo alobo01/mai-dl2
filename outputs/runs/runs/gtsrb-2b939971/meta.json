@@ -1,0 +1,7 @@
+{
+  "git_hash": "4f31af7a5a9166cc7f477b4e0ba2ab2777a7f47b",
+  "hydra_run_dir_default": "outputs/runs/classic_gtsrb_eval/2025-06-12_15-40-11",
+  "custom_run_dir": "C:\\Users\\aleja\\OneDrive\\Documents\\GitHub\\mai-dl2\\outputs\\runs\\runs\\gtsrb-2b939971",
+  "command": "train.trainer.max_epochs=50",
+  "config_hash": "2b93997158bce75a5902d963ab3aed36bdbc9d2d31a333581ff0714a4779a2b7"
+}
