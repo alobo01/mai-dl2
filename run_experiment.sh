@@ -75,7 +75,8 @@ echo "Found experiment config: $FULL_CONFIG_PATH"
 echo "Starting training with experiment config: experiments/$EXPERIMENT_CONFIG"
 echo "Command: python -m src.deep_osr.train --config-name experiments/$EXPERIMENT_CONFIG"
 
-python -m src.deep_osr.train \
+conda run -p /lhome/ext/iiia021/iiia0211/miniconda/envs/osr \
+    python -m src.deep_osr.train \
     --config-path "/lhome/ext/iiia021/iiia0211/embeddingInspector/osr/configs/experiments/" \
     --config-name "$EXPERIMENT_CONFIG" 
 
