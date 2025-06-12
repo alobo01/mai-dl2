@@ -1,0 +1,59 @@
+dataset:
+  name: gtsrb
+  path: ./data # Root path for datasets
+  img_size: 32 # GTSRB images are often resized, e.g., to 32x32 or 48x48. Adjust if needed.
+  num_classes: 35 # Number of classes for model training (known classes)
+  total_original_classes: 43 # Total classes in the original GTSRB dataset
+  # Example: first 35 classes are known, last 8 are unknown. Adjust as needed.
+  known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+  unknown_classes_original_ids: [35, 36, 37, 38, 39, 40, 41, 42]
+  batch_size: 128
+  num_workers: 4
+  val_split_ratio: 0.2 # Proportion of training data to use for validation
+
+model:
+  type: "efficientnet_b4_classic" # Model identifier, can be changed e.g. to resnet specific for gtsrb
+  d_embed: 512
+
+  backbone:
+    name: "efficientnet_b4" # Or another backbone suitable for GTSRB
+    pretrained: True
+    frozen: False
+    num_output_features: 1792 # For efficientnet_b4. Verify if suitable for GTSRB with chosen img_size.
+
+  cls_head:
+    in_features: ${model.backbone.num_output_features}
+    # num_classes: ${dataset.num_classes} # Automatically taken (e.g. 35)
+    use_weight_norm: True
+    label_smoothing: 0.1
+    temperature: 1.0
+
+train:
+  optimizer:
+    name: "AdamW"
+    lr: 0.003
+    weight_decay: 0.01
+
+  trainer:
+    max_epochs: 50 # Adjust as needed for GTSRB
+    gpus: 0
+    precision: 32
+    deterministic: True
+    # enable_early_stopping: True
+    # early_stopping_monitor: "val/acc"
+    # early_stopping_patience: 10
+    # early_stopping_mode: "max"
+  
+  run_test_after_train: True
+  run_custom_evaluation_after_train: True # Enable the detailed evaluation
+
+seed: 42
+outputs_root_dir: "outputs"
+data_root_dir: "data/processed"
+
+hydra:
+  run:
+    dir: ${outputs_root_dir}/runs/classic_gtsrb_eval/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: ${outputs_root_dir}/multirun/classic_gtsrb_eval/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
