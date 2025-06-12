@@ -1,0 +1,9 @@
+# Enhanced ResNet50 configuration for enhanced OSR experiments
+# Inherits from base resnet50_enhanced_osr.yaml with experiment-specific settings
+
+defaults:
+  - resnet50_enhanced_osr
+
+# Override dummy class head settings for enhanced experiments
+dummy_cls_head:
+  enabled: true  # Enable dummy class head for enhanced experiments

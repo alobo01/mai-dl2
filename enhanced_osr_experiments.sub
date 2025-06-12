@@ -1,0 +1,93 @@
+# HTCondor submit file for Enhanced OSR experiments
+# This file submits all enhanced OSR experiments as a single cluster
+
+# Basic job configuration
+universe = vanilla
+executable = htcondor_job.sh
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+# Resource requirements
+request_cpus = 4
+request_memory = 8GB
+request_gpus = 1
+
+# GPU requirements (adjust based on your cluster)
++RequiresGPU = True
+requirements = (OpSysMajorVer == 7) || (OpSysMajorVer == 8) || (OpSysMajorVer == 9)
+
+# File transfer
+transfer_input_files = src/, configs/, data/, requirements.txt, setup.py, pyproject.toml
+transfer_output_files = htcondor_outputs/
+
+# Output and error files
+output = logs/job_$(Process)_$(config_name).out
+error = logs/job_$(Process)_$(config_name).err
+log = logs/enhanced_osr_cluster.log
+
+# Create logs directory if it doesn't exist
+initialdir = .
+
+# Notification
+notification = Error
+notify_user = your_email@domain.com
+
+# Job priority and policies
+priority = 0
+max_retries = 2
+
+# Environment variables
+environment = "PYTHONPATH=/tmp/src"
+
+# Job-specific arguments
+# Each job gets: JOB_ID CONFIG_NAME GPU_ID MAX_EPOCHS
+
+# CIFAR-10 Experiments (6 jobs)
+arguments = 1 exp_cifar10_threshold_1u 0 80
+config_name = exp_cifar10_threshold_1u
+queue
+
+arguments = 2 exp_cifar10_penalty_3u 0 80
+config_name = exp_cifar10_penalty_3u
+queue
+
+arguments = 3 exp_cifar10_combined_5u 0 80
+config_name = exp_cifar10_combined_5u
+queue
+
+arguments = 4 exp_cifar10_high_penalty_1u 0 80
+config_name = exp_cifar10_high_penalty_1u
+queue
+
+arguments = 5 exp_cifar10_high_threshold_3u 0 80
+config_name = exp_cifar10_high_threshold_3u
+queue
+
+arguments = 6 exp_cifar10_optimized_combined_5u 0 80
+config_name = exp_cifar10_optimized_combined_5u
+queue
+
+# GTSRB Experiments (6 jobs)
+arguments = 7 exp_gtsrb_threshold_3u 0 80
+config_name = exp_gtsrb_threshold_3u
+queue
+
+arguments = 8 exp_gtsrb_penalty_6u 0 80
+config_name = exp_gtsrb_penalty_6u
+queue
+
+arguments = 9 exp_gtsrb_combined_9u 0 80
+config_name = exp_gtsrb_combined_9u
+queue
+
+arguments = 10 exp_gtsrb_high_penalty_3u 0 80
+config_name = exp_gtsrb_high_penalty_3u
+queue
+
+arguments = 11 exp_gtsrb_low_threshold_6u 0 80
+config_name = exp_gtsrb_low_threshold_6u
+queue
+
+arguments = 12 exp_gtsrb_optimized_combined_9u 0 80
+config_name = exp_gtsrb_optimized_combined_9u
+queue

@@ -1,0 +1,9 @@
+# Enhanced training configuration base
+# Inherits from enhanced_osr.yaml with experiment defaults
+
+defaults:
+  - enhanced_osr
+
+# Base settings for enhanced experiments
+loss:
+  strategy: "threshold"  # Default strategy, overridden by specific experiments

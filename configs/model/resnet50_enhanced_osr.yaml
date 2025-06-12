@@ -1,0 +1,37 @@
+# Enhanced ResNet50 configuration for Open-Set Recognition with dummy classes
+# This configuration supports training with unknown samples as dummy classes
+
+type: "resnet50_enhanced_osr"
+
+# Embedding dimension after the neck
+d_embed: 512
+
+backbone:
+  name: "resnet50"
+  pretrained: True
+  frozen: False
+  num_output_features: 2048
+
+neck:
+  in_features: ${model.backbone.num_output_features}
+  out_features: ${model.d_embed}
+  use_batchnorm: True
+  use_relu: True
+
+cls_head:
+  in_features: ${model.d_embed}
+  use_weight_norm: True
+  label_smoothing: 0.0
+  temperature: 1.0
+
+# Enhanced OSR head supporting dummy classes
+osr_head:
+  type: "energy"
+  in_features: ${model.d_embed}
+  
+# Dummy class head configuration (optional, controlled by experiment)
+dummy_cls_head:
+  enabled: False  # Will be overridden by experiment configs
+  in_features: ${model.d_embed}
+  use_weight_norm: True
+  temperature: 1.0

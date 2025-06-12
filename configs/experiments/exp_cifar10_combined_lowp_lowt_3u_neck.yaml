@@ -1,0 +1,88 @@
+data_root_dir: data/processed
+dataset:
+  batch_size: 128
+  enhanced_settings:
+    dummy_class_enabled: true
+    include_unknown_in_training: true
+    unknown_training_ratio: 0.3
+  img_size: 32
+  known_classes_original_ids:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  name: cifar10
+  num_classes: 7
+  num_known_classes: 7
+  num_workers: 4
+  path: ./data
+  total_original_classes: 10
+  unknown_classes_original_ids:
+  - 7
+  - 8
+  - 9
+  val_split_ratio: 0.2
+experiment:
+  name: cifar10_combined_lowp_lowt_3u_neck
+  use_enhanced: true
+experiment_name: cifar10_combined_lowp_lowt_3u_neck
+model:
+  backbone:
+    frozen: false
+    name: resnet50
+    num_output_features: 2048
+    pretrained: true
+  cls_head:
+    in_features: 512
+    label_smoothing: 0.1
+    temperature: 1.0
+    use_weight_norm: true
+  d_embed: 512
+  neck:
+    enabled: true
+    in_features: 2048
+    out_features: 512
+    use_batchnorm: true
+    use_relu: true
+  osr_head:
+    in_features: 512
+    type: energy
+  type: enhanced_openset_resnet50
+outputs_root_dir: outputs
+seed: 42
+train:
+  calibration:
+    method: temperature_scaling
+  loss:
+    ce_seen_weight: 1.0
+    confidence_threshold: 0.5
+    dummy_class_penalty: 2.0
+    dummy_loss_weight: 1.0
+    osr_loss_weight: 0.1
+    penalty_weight: 0.5
+    strategy: combined
+    threshold_weight: 0.5
+    use_dummy_class: true
+  optimizer:
+    lr: 0.001
+    name: AdamW
+    weight_decay: 0.01
+  run_custom_evaluation_after_train: true
+  run_test_after_train: true
+  scheduler:
+    name: CosineAnnealingLR
+    params:
+      T_max: 50
+  trainer:
+    deterministic: true
+    enable_checkpointing: true
+    enable_model_summary: true
+    enable_progress_bar: true
+    gpus: 1
+    log_every_n_steps: 50
+    logger: true
+    max_epochs: 50
+    precision: 32

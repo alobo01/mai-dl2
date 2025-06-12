@@ -1,0 +1,50 @@
+# HTCondor submit file for dual dataset smoke test
+# Tests one config from each dataset with 1 epoch
+
+# Basic job configuration
+universe = vanilla
+executable = htcondor_job.sh
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+# Resource requirements
+request_cpus = 2
+request_memory = 4GB
+request_gpus = 1
+
+# GPU requirements
++RequiresGPU = True
+requirements = (OpSysMajorVer == 7) || (OpSysMajorVer == 8) || (OpSysMajorVer == 9)
+
+# File transfer
+transfer_input_files = src/, configs/, data/, requirements.txt, setup.py, pyproject.toml
+transfer_output_files = htcondor_outputs/
+
+# Output and error files
+output = logs/smoke_$(config_name).out
+error = logs/smoke_$(config_name).err
+log = logs/dual_smoke_test.log
+
+# Create logs directory if it doesn't exist
+initialdir = .
+
+# Notification
+notification = Complete
+notify_user = your_email@domain.com
+
+# Job priority and policies
+priority = 0
+max_retries = 1
+
+# Environment variables
+environment = "PYTHONPATH=/tmp/src"
+
+# CIFAR-10 smoke test (1 epoch)
+arguments = 998 exp_cifar10_threshold_1u 0 1
+config_name = cifar10_smoke
+queue
+
+# GTSRB smoke test (1 epoch)
+arguments = 997 exp_gtsrb_threshold_3u 0 1
+config_name = gtsrb_smoke
+queue

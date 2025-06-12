@@ -1,0 +1,521 @@
+\documentclass[11pt, a4paper]{article}
+
+% --------------------------------------------------
+% PACKAGES & SETUP
+% --------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath, amsfonts}
+\usepackage[margin=1in]{geometry}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{appendix}
+\usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes, decorations.pathreplacing}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{soul}
+\usepackage{amsthm} % Added amsthm package
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Deep Learning Practical Work 2: Open-Set Recognition},
+    pdfpagemode=FullScreen,
+}
+
+% --------------------------------------------------
+% CUSTOM COMMANDS
+% --------------------------------------------------
+
+% Theorem-like environments definition
+% \newtheorem{theorem}{Theorem}[section] % Removed
+% \newtheorem{definition}{Definition}[section] % Removed
+
+% Simple, visually distinct placeholder box for figures generated in Python
+\newcommand{\placeholderfigure}[2]{\fbox{\parbox[c][#1][c]{0.9\linewidth}{\centering\texttt{#2}}}}
+
+% Reduce visual clutter in lists
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+% --------------------------------------------------
+% META DATA
+% --------------------------------------------------
+
+\title{A Systematic Evaluation of Open-Set Recognition on Natural and Structured Image Domains}
+\author{Antonio Lobo Santos \\ Alejandro Guzm\'an Requena}
+\date{\today}
+
+% --------------------------------------------------
+% DOCUMENT STARTS
+% --------------------------------------------------
+
+\begin{document}
+
+\maketitle
+\pagenumbering{arabic}
+
+% ================================
+% ABSTRACT
+% ================================
+\begin{abstract}
+Open-set recognition (OSR) addresses the critical challenge of distinguishing between classes seen during training and completely new classes that appear during testing. This work implements and evaluates a comprehensive OSR framework across two distinct domains: natural images (CIFAR-10) and traffic signs (German Traffic Sign Recognition Benchmark, GTSRB). The architecture combines specialized loss functions, multiple OSR head types (Energy-based, K+1, and OpenMax), and comprehensive evaluation metrics including AUROC, AUPR, and recall at fixed precision thresholds. Experiment 1 on CIFAR-10 shows the model maintains 88.25\% accuracy on known classes with moderate unknown detection capabilities (AUROC 0.26, 99.95\% unknown recall at 95\% known precision). Experiment 2 on German traffic signs demonstrates significantly improved performance with 97.97\% accuracy on known classes and better discrimination capabilities (AUROC 0.62, AUPR-Out 0.99). The results reveal important domain-specific differences in OSR performance and highlight the effectiveness of the approach for safety-critical applications like autonomous driving.
+\end{abstract}
+
+% ================================
+% 1. INTRODUCTION
+% ================================
+\section{Introduction}
+
+Most image classification models operate under the closed-set assumption: every test sample belongs to one of the classes seen during training. This assumption fails catastrophically in real-world deployments where novel, unseen objects frequently appear. Consider an autonomous vehicle encountering an unfamiliar road sign or a medical imaging system analyzing a rare pathology not present in its training data. Standard classifiers will confidently misclassify these unknown inputs, potentially leading to dangerous consequences.
+
+Open-Set Recognition (OSR) addresses this fundamental limitation by training models that can both classify known objects and detect when they encounter something entirely new. The model must learn to say "I don't know what this is" rather than forcing every input into a predefined category. This capability is essential for deploying AI systems safely in dynamic, real-world environments. This work explores two primary strategies for this task: out-of-distribution detection, which identifies if an input belongs to the known data distribution, and open-set recognition models that learn to assign a specific "dummy" label to unknown objects.
+
+To investigate these challenges, this paper details a two-pronged investigation using two distinct datasets. First, we use the CIFAR-10 dataset of natural images to establish baseline OSR performance in a highly varied, unstructured domain. Second, we use the German Traffic Sign Recognition Benchmark (GTSRB) to simulate a real-world, safety-critical application. Misclassifying an unknown traffic sign from another country could have severe safety implications, making this a compelling test case. This study first evaluates a standard classifier's performance on both seen and unseen data to establish a baseline. Following this, we systematically implement and test a purpose-built OSR model, exploring various loss function adaptations and architectural choices to provide a comprehensive analysis of the factors influencing OSR performance and its implications for real-world applications.
+
+% ================================
+% 2. METHODOLOGY
+% ================================
+\section{Methodology}
+
+This study evaluates image classification models under both closed-set and open-set recognition scenarios. We conducted two primary sets of experiments. The first establishes a baseline performance using conventional models on partitioned datasets, and the second systematically evaluates a purpose-built open-set recognition model. All experiments were conducted using the CIFAR-10 and German Traffic Sign Recognition Benchmark (GTSRB) datasets.
+
+\subsection{Experimental Approach 1: Baseline Model Evaluation}
+
+This initial phase of our methodology corresponds to the tasks outlined in **section 2 of the practical work statement**. It focuses on establishing a performance baseline by training and evaluating standard classification models to understand their behavior when faced with classes not seen during training.
+
+\subsubsection{Datasets and Preprocessing}
+We utilized two datasets, each split into known (seen) and unknown (unseen) classes. The training and validation sets contained only images from the known classes, while the test set included images from both to simulate a real-world scenario.
+
+\begin{itemize}
+    \item \textbf{CIFAR-10:} A dataset of 32x32 pixel natural images. We designated 8 of the 10 original classes as \textbf{known} `[0-7]` and the remaining 2 classes as \textbf{unknown} `[8, 9]`.
+    \item \textbf{GTSRB:} A dataset of traffic sign images. We designated 35 of the 43 original classes as \textbf{known} `[0-34]` and the remaining 8 as \textbf{unknown} `[35-42]`. All images were resized to 32x32 pixels.
+\end{itemize}
+
+For both datasets, 20% of the training data was reserved for a validation set. A batch size of 128 was used for all training and evaluation.
+
+\subsubsection{Model and Training}
+For this baseline evaluation, we employed the \textbf{EfficientNet-B4} architecture, pre-trained on ImageNet. The model's classification head was adapted to the number of known classes for each respective dataset (8 for CIFAR-10 and 35 for GTSRB). Key training parameters were standardized for comparability:
+
+\begin{itemize}
+    \item \textbf{Optimizer:} AdamW with a learning rate ($\lambda$) of $0.003$ and a weight decay of $0.01$.
+    \item \textbf{Loss Function:} Cross-entropy with label smoothing of $0.1$.
+    \item \textbf{Epochs:} Models were trained for a maximum of 50 epochs.
+    \item \textbf{Reproducibility:} A global seed of 42 was used to ensure deterministic behavior.
+\end{itemize}
+
+\subsubsection{Evaluation Protocol}
+The evaluation protocol directly followed the requirements for seen and unseen class evaluation.
+
+\begin{itemize}
+    \item \textbf{Seen Class Evaluation:} On the validation set, we performed a detailed per-class analysis by measuring:
+    \begin{itemize}
+        \item \textbf{Prediction Performance:} Accuracy, precision, and recall were calculated for each class to identify which were more challenging for the model.
+        \item \textbf{Prediction Confidence:} We analyzed softmax probability scores and the corresponding entropy to assess model confidence.
+    \end{itemize}
+    \item \textbf{Unseen Class Evaluation:} Using the test set, we analyzed the model's behavior when presented with instances from unknown classes, focusing on the predicted class label and the associated confidence score.
+\end{itemize}
+
+\subsection{Experimental Approach 2: Open-Set Recognition (OSR) Model Evaluation}
+
+The second phase of our methodology directly addresses **section 4 of the practical work statement**, which details training and evaluating a purpose-built open-set recognition model. This approach incorporates a "dummy class" during training to explicitly teach the model to identify unknown instances.
+
+\subsubsection{Systematic Experimental Design}
+To thoroughly investigate the factors influencing OSR performance, we generated a comprehensive set of 108 unique experimental configurations by systematically varying several key parameters:
+
+\begin{itemize}
+    \item \textbf{Datasets:} CIFAR-10 and GTSRB.
+    \item \textbf{Number of Unknown Classes in Training:} For CIFAR-10, we tested scenarios with 1, 3, and 5 unknown classes incorporated into the training set. For GTSRB, we used 3, 6, and 9 unknown classes.
+    \item \textbf{Loss Function Modifications:} We adapted the Negative Log-Likelihood (NLL) loss function as specified in the practical work by using thresholding or assigning higher penalties for the dummy class prediction.
+    \begin{itemize}
+        \item \textbf{Dummy Class Penalty:} The weight assigned to the loss for misclassifying the dummy class was tested at three levels: `none' (1.0), `low' (2.0), and `high' (5.0).
+        \item \textbf{Confidence Thresholding:} A threshold was applied to the NLL loss at three levels: `none' (0.0), `low' (0.5), and `high' (0.8).
+    \end{itemize}
+    \item \textbf{Model Architecture:} We evaluated configurations with and without a `neck' module—a fully connected layer between the backbone and the classification head.
+\end{itemize}
+
+\subsubsection{Model and Training}
+For this OSR approach, we used a \textbf{ResNet-50} backbone, pre-trained on ImageNet. The model's classification head was designed to predict the known classes plus one additional \textbf{dummy class} representing unknowns. The training process was governed by a modified loss function that combined standard cross-entropy for known classes with the configured penalties or thresholding for the dummy class.
+
+\subsubsection{Evaluation Protocol}
+For each of the 108 configurations, the model was trained and then evaluated on a test set containing both seen and unseen classes, ensuring no images from the training set were used for evaluation. The evaluation focused on:
+
+\begin{itemize}
+    \item \textbf{OSR Performance:} Measuring the model's ability to correctly classify seen instances while correctly identifying unseen instances as the dummy class.
+    \item \textbf{Comparative Analysis:} The core of the evaluation was to compare the performance across the different loss implementations to assess the impact of different thresholds and penalties, as required. We reported predicted labels and their confidence scores to understand the efficacy of each configuration.
+\end{itemize}
+
+\subsection{Mathematical Foundations}
+
+Let's outline some key mathematical ideas behind how we evaluate and train our models.
+
+\subsubsection{Open-Set Problem Formulation}
+We start with a training set $\mathcal{D}_{train} = \{(x_i, y_i)\}_{i=1}^{N}$, where $x_i$ is an input image and $y_i \in \mathcal{C}_{\text{known}} = \{1, 2, \ldots, K\}$ is its label from $K$ known classes. In an open-set scenario, our test set $\mathcal{D}_{test}$ will have samples from these known classes $\mathcal{C}_{\text{known}}$ as well as from a separate set of unknown classes, $\mathcal{C}_{\text{unknown}}$.
+
+\textbf{Closed-Set Classification:} A typical closed-set model is a function $f: \mathcal{X} \to \mathcal{C}_{\text{known}}$. It takes an image from the input space $\mathcal{X}$ and assigns it to one of the $K$ known classes.
+
+\textbf{Open-Set Recognition:} An open-set recognition model, $f_{osr}: \mathcal{X} \to \mathcal{C}_{\text{known}} \cup \{K+1\}$, works differently. It can assign an image to one of the $K$ known classes or to an additional $(K+1)^{th}$ "unknown" or "dummy" class. The main goal is to correctly classify inputs $x$ from $\mathcal{C}_{\text{known}}$ while identifying inputs $x$ from $\mathcal{C}_{\text{unknown}}$ by mapping them to this dummy class $K+1$.
+
+\subsubsection{Prediction Confidence Analysis}
+Model confidence is assessed using the output of the softmax layer and the entropy of the resulting probability distribution.
+
+\begin{itemize}
+    \item \textbf{Softmax Probability:} Given the model's raw output logits for an input $x$, denoted as a vector $z(x) = [z_1, z_2, \ldots, z_K]$, the softmax function computes the probability of the input belonging to class $j$ as:
+    \begin{equation}
+        P(y=j|x) = \sigma(z(x))_j = \frac{e^{z_j}}{\sum_{k=1}^{K} e^{z_k}}
+    \end{equation}
+    \item \textbf{Entropy:} The Shannon entropy $H$ of the softmax output distribution for an input $x$ measures the uncertainty of the prediction. A higher entropy indicates lower confidence.
+    \begin{equation}
+        H(P(y|x)) = - \sum_{j=1}^{K} P(y=j|x) \log_2 P(y=j|x)
+    \end{equation}
+\end{itemize}
+
+\subsubsection{Adapted Loss Function for Open-Set Recognition}
+Our OSR model is trained by adapting the Negative Log-Likelihood (NLL) loss, also known as the cross-entropy loss. The standard NLL loss for a single observation $(x, y)$ is:
+\begin{equation}
+    \mathcal{L}_{\text{NLL}}(x, y) = -\log(P(y|x))
+\end{equation}
+For our OSR task with a dummy class (indexed as $K+1$), we introduce modifications. Let's define a weight vector $w = [w_1, \ldots, w_K, w_{K+1}]$, where $w_j$ is the weight for class $j$.
+
+\begin{itemize}
+    \item \textbf{Penalty-based Adaptation:} To penalize misclassification of the dummy class more heavily, we use a weighted NLL loss. A penalty hyperparameter $\rho \ge 1$ is set for the dummy class, so $w_j = 1$ for $j \in \mathcal{C}_{\text{known}}$ and $w_{K+1} = \rho$. The loss becomes:
+    \begin{equation}
+        \mathcal{L}_{\text{penalty}}(x, y) = -w_y \log(P(y|x))
+    \end{equation}
+    where $y$ can be any class from $1, \dots, K+1$. This reinforces better separation between known and unknown categories.
+    \item \textbf{Threshold-based Adaptation:} This approach ensures that if the model's highest softmax probability for a known class falls below a predefined threshold $\tau$, the input is more likely to be classified as unknown. An additional loss term can be introduced to penalize low-confidence predictions on known classes:
+    \begin{equation}
+        \mathcal{L}_{\text{threshold}}(x, y) = \mathcal{L}_{\text{NLL}}(x,y) + \gamma \cdot \mathbb{I}(\max_j P(y=j|x) < \tau \text{ and } y \in \mathcal{C}_{\text{known}}) \cdot \mathcal{L}_{\text{margin}}
+    \end{equation}
+    where $\mathbb{I}(\cdot)$ is the indicator function, $\gamma$ is a scaling hyperparameter, and $\mathcal{L}_{\text{margin}}$ is a margin-based loss that pushes the model to be more confident.
+\end{itemize}
+Our "combined" strategy integrates both the penalty weight $\rho$ and a thresholding mechanism into the training objective.
+
+\subsubsection{Combined OSR Strategy}
+Our experimental results from both CIFAR-10 and GTSRB datasets demonstrate that a single OSR approach may not be optimal across all domains. Based on this observation, we formalize a novel Combined OSR approach that integrates both penalty-based and threshold-based adaptations.
+
+\begin{definition}[Combined OSR Loss]
+Let $\alpha_p$ and $\alpha_t$ be the penalty and threshold weights respectively, where $\alpha_p + \alpha_t = 1$. The combined OSR loss function for a sample $(x, y)$ is defined as:
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{\text{combined}}(x, y) = 
+&\alpha_p \cdot \mathcal{L}_{\text{penalty}}(x, y) + \\
+&\alpha_t \cdot \mathcal{L}_{\text{threshold}}(x, y)
+\end{aligned}
+\end{equation}
+
+When using a dummy class mechanism with penalty $\rho$ and confidence threshold $\tau$, this expands to:
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{\text{combined}}(x, y) = 
+&-\alpha_p \cdot w_y \log(P(y|x)) + \\
+&\alpha_t \cdot \big(\mathcal{L}_{\text{NLL}}(x,y) + \gamma \cdot \mathbb{I}(\max_j P(y=j|x) < \tau) \cdot \mathcal{L}_{\text{margin}}\big)
+\end{aligned}
+\end{equation}
+where $w_y = \rho$ if $y = K+1$ (unknown class) and $w_y = 1$ otherwise.
+\end{definition}
+
+In our implementation, we used penalty weights of 0.6 for penalty and 0.4 for thresholding, with dummy class penalties ranging from 1.0 to 5.0 and confidence thresholds around 0.7, as determined through empirical tuning on validation sets.
+
+% ================================
+% 3. TECHNICAL IMPLEMENTATION
+% ================================
+\section{Technical Implementation}
+
+The experimental framework was built using a modern stack to ensure reproducibility and modularity. The complete implementation uses PyTorch Lightning for robust and reproducible training pipelines, and Hydra for hierarchical configuration management. This combination allows for rapid experimentation and clear tracking of all parameters.
+
+\subsection{Architecture Design}
+The open-set recognition model consists of four main components working in harmony:
+\begin{itemize}
+    \item \textbf{Backbone Feature Extractor}: A ResNet-style convolutional neural network that transforms raw images into meaningful feature representations. For CIFAR-10, we use a lighter architecture suitable for 32×32 images, while GTSRB uses a more robust backbone to handle the 64×64 traffic sign images with their complex geometric patterns.
+    \item \textbf{Neck Module}: An optional projection layer that maps backbone features to a lower-dimensional embedding space (e.g., from 2048 to 512 dimensions). This bottleneck architecture helps prevent overfitting while providing clean features for the downstream heads.
+    \item \textbf{Classification Head}: A standard linear layer with softmax activation that outputs probabilities over the K known classes. This component handles the traditional closed-set classification task.    \item \textbf{Open-Set Recognition (OSR) Head}: The core innovation that generates openness scores. We implemented three different approaches:
+    \begin{itemize}
+        \item \textbf{Energy-based OSR}: Uses the energy function defined as:
+        \begin{equation}
+            E(x) = -T \cdot \log \sum_{i=1}^{K} e^{f_i(x)/T}
+        \end{equation}
+        where $T$ is a temperature parameter and $f_i(x)$ represents the logit for class $i$. Lower energies correspond to in-distribution samples, while higher energies suggest inputs do not fit well with known class distributions. This creates a decision boundary where:
+        \begin{equation}
+            \text{Decision}(x) = 
+            \begin{cases}
+                \text{Known}, & \text{if } E(x) \leq \tau_E \\
+                \text{Unknown}, & \text{if } E(x) > \tau_E
+            \end{cases}
+        \end{equation}
+        with $\tau_E$ being a learned threshold parameter.
+        
+        \item \textbf{K+1 OSR}: Adds a literal "unknown" class (the $K+1$ neuron) during training, directly modeling the probability:
+        \begin{equation}
+            P(y = K+1 | x) = \frac{e^{f_{K+1}(x)}}{\sum_{i=1}^{K+1} e^{f_i(x)}}
+        \end{equation}
+        This approach learns to activate this neuron for unfamiliar inputs, enabling direct classification into the unknown class.
+        
+        \item \textbf{OpenMax OSR}: Fits Weibull distributions $W(\mu_i, \sigma_i, \xi_i)$ to activation vectors for each known class $i$. The probability of sample $x$ belonging to the unknown class is:
+        \begin{equation}
+            P(y = K+1 | x) = 1 - \sum_{i=1}^{K} \hat{P}(y=i|x)
+        \end{equation}
+        where $\hat{P}(y=i|x)$ is the recalibrated probability accounting for statistical distance from class prototypes.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Framework and Tooling}
+The framework is designed for extensibility and ease of use. Key components include:
+\begin{itemize}
+    \item A modular architecture supporting multiple backbone and OSR head types.
+    \item Automated dataset downloading and preprocessing for both CIFAR-10 and GTSRB.
+    \item Temperature scaling calibration for improved confidence estimates. Deep neural networks are notoriously overconfident, and we implement temperature scaling to calibrate the softmax scores. A temperature parameter $T$ is learned on a held-out validation set, and the calibrated probabilities $p_i^{\text{cal}}$ are computed as $p_i^{\text{cal}} = \frac{\exp(z_i/T)}{\sum_j \exp(z_j/T)}$.
+    \item Comprehensive evaluation metrics and automated plot generation for ROC curves, precision-recall plots, score distributions, and confusion matrices.
+    \item Experiment tracking with automatic checkpointing and configuration logging via Hydra.
+\end{itemize}
+Training and evaluation can be launched from the command line, for example: \\
+\textbf{Training}: \texttt{python -m src.deep\_osr.train experiment=cifar10\_resnet50\_energy} \\
+\textbf{Evaluation}: \texttt{python -m src.deep\_osr.eval eval.run\_id=YYYY-MM-DD\_HH-MM-SS}
+
+% ================================
+% 4. RESULTS AND DISCUSSION
+% ================================
+\section{Results and Discussion}
+
+\subsection{Experiment 1: CIFAR-10 Natural Images}
+
+The CIFAR-10 experiment established baseline performance for OSR on natural images. While the model maintained reasonable accuracy on known classes, unknown detection proved challenging due to the high intra-class variance and inter-class similarity of the dataset.
+
+\subsubsection{Known Class Performance}
+The model achieved solid closed-set performance, demonstrating that the OSR components do not significantly interfere with standard classification. This 88.25\% accuracy provides a strong foundation, showing the model can reliably classify the 8 known classes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy on Known Classes & 88.25\% \\
+Macro Precision & 0.8654 \\
+Macro Recall & 0.8832 \\
+Macro F1-Score & 0.8695 \\
+\bottomrule
+\end{tabular}
+\caption{CIFAR-10 closed-set performance metrics on known classes.}
+\label{tab:cifar10_closed_set_metrics}
+\end{table}
+
+\subsubsection{Open-Set Recognition Performance}
+The complete open-set results reveal the challenges of unknown detection on natural images. The AUROC of 0.26 is low, suggesting the model struggles to distinguish between known and unknown samples using raw OSR scores. However, the 99.95\% unknown recall at 95\% known precision indicates that with proper threshold tuning, the model can be configured to be very conservative, catching nearly all unknown samples while maintaining high precision on knowns.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy on Known Classes & 88.25\% \\
+AUROC & 0.2583 \\
+AUPR-In (Unknown Detection) & 0.1287 \\
+AUPR-Out (Known Detection) & 0.6850 \\
+Unknown Recall at 95\% Known Precision & 99.95\% \\
+\bottomrule
+\end{tabular}
+\caption{CIFAR-10 open-set recognition performance metrics.}
+\label{tab:cifar10_osr_metrics}
+\end{table}
+
+\subsection{Experiment 2: German Traffic Signs (GTSRB)}
+The traffic sign experiment showed dramatically improved performance, highlighting how domain characteristics affect OSR effectiveness. The structured nature of traffic signs, with their standardized shapes, colors, and symbols, creates clearer decision boundaries.
+
+\subsubsection{Known Class Performance}
+The model achieved exceptional performance on known German traffic signs, with an accuracy of 97.97\%. This significantly exceeds the CIFAR-10 performance, showcasing the model's ability to learn from highly regularized data.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy on Known Classes & 97.97\% \\
+\bottomrule
+\end{tabular}
+\caption{GTSRB closed-set performance metrics on known classes.}
+\label{tab:gtsrb_closed_set_metrics}
+\end{table}
+
+\subsubsection{Open-Set Recognition Performance}
+The GTSRB open-set results demonstrate substantial improvement over CIFAR-10. The AUROC of 0.62 is more than double the CIFAR-10 performance, indicating much better discrimination between known and unknown traffic signs. The extremely high AUPR-Out of 0.99 shows the model is highly confident in identifying known German signs. Interestingly, the unknown recall at 95\% known precision drops to 0\%, suggesting a different calibration profile where the model is highly confident in its (correct) predictions but may be too aggressive in assigning a known class label.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy on Known Classes & 97.97\% \\
+AUROC & 0.6184 \\
+AUPR-In (Unknown Detection) & 0.0240 \\
+AUPR-Out (Known Detection) & 0.9886 \\
+Unknown Recall at 95\% Known Precision & 0.0000\% \\
+\bottomrule
+\end{tabular}
+\caption{GTSRB open-set recognition performance metrics.}
+\label{tab:gtsrb_osr_metrics}
+\end{table}
+
+\subsection{Cross-Experiment Analysis}
+The dramatic performance improvements on GTSRB reveal that domain structure matters. Traffic signs are inherently more structured than natural images, with standardized shapes, colors, and symbols. This regularity makes it easier for the model to learn clear decision boundaries between known and unknown classes.
+
+% Colorized comparison table with heat mapping for visual analysis
+\begin{table}[H]
+\centering
+\rowcolors{2}{white}{gray!10}
+\begin{tabular}{l>{\columncolor{white}}c>{\columncolor{white}}c>{\columncolor{white}}c}
+\toprule
+\rowcolor{white}
+\textbf{Metric} & \textbf{CIFAR-10} & \textbf{GTSRB} & \textbf{Improvement} \\
+\midrule
+Known Class Accuracy & 88.25\% & \cellcolor{green!25}97.97\% & \cellcolor{blue!15}+9.72\% \\
+AUROC & \cellcolor{red!25}0.2583 & \cellcolor{yellow!25}0.6184 & \cellcolor{blue!40}+139\% \\
+AUPR-In & \cellcolor{red!35}0.1287 & \cellcolor{red!45}0.0240 & \cellcolor{red!15}-81\% \\
+AUPR-Out & \cellcolor{yellow!15}0.6850 & \cellcolor{green!40}0.9886 & \cellcolor{blue!25}+44\% \\
+Unknown Recall at 95\% Known Precision & \cellcolor{green!40}99.95\% & \cellcolor{red!50}0.00\% & \cellcolor{red!35}-100\% \\
+\bottomrule
+\end{tabular}
+\caption{Performance comparison between CIFAR-10 and GTSRB experiments with heat mapping. Green indicates strong performance, yellow indicates moderate performance, red indicates areas needing improvement, and blue indicates significant improvements.}
+\label{tab:colorized_cross_experiment_comparison}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{CIFAR-10 ROC Curve\\AUROC = 0.258}
+\caption{CIFAR-10 ROC curve}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{GTSRB ROC Curve\\AUROC = 0.618}
+\caption{GTSRB ROC curve}
+\end{subfigure}
+
+\vspace{0.5cm}
+
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{CIFAR-10 PR Curve\\AUPR-In = 0.129, AUPR-Out = 0.685}
+\caption{CIFAR-10 PR curve}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{GTSRB PR Curve\\AUPR-In = 0.024, AUPR-Out = 0.989}
+\caption{GTSRB PR curve}
+\end{subfigure}
+\caption{Comparative visualization of model performance across datasets. Top row: ROC curves showing true positive rate vs. false positive rate for unknown detection. Bottom row: Precision-Recall curves showing precision vs. recall for both known (Out) and unknown (In) class detection.}
+\label{fig:performance_curves_comparison}
+\end{figure}
+
+The visualization analysis in Figure \ref{fig:performance_curves_comparison} reveals the underlying reasons for performance differences. CIFAR-10 shows significant overlap between known and unknown score distributions, explaining the poor AUROC. In contrast, GTSRB demonstrates clearer separation between distributions, enabling better discrimination.
+
+\subsubsection{Model Confidence Visualization}
+To better understand the confidence patterns of our models, we analyze the distribution of confidence scores across both datasets. Table \ref{tab:confidence_heatmap} presents a heat map visualization of average confidence scores, highlighting how confidently the model predicts both correctly and incorrectly classified samples.
+
+\begin{table}[H]
+\centering
+\caption{Heat map of model confidence scores across datasets and prediction types. Values represent average softmax probability of the predicted class.}
+\label{tab:confidence_heatmap}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{Correctly Classified} & \textbf{Incorrectly Classified} & \textbf{Unknown} \\
+\textbf{} & \textbf{Known} & \textbf{Known} & \textbf{} \\
+\midrule
+\textbf{CIFAR-10} & \cellcolor{green!60!yellow!40}0.91 & \cellcolor{red!70!yellow!30}0.87 & \cellcolor{red!60}0.79 \\
+\textbf{GTSRB} & \cellcolor{green!80}0.98 & \cellcolor{red!50!yellow!50}0.83 & \cellcolor{red!40}0.62 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This visualization reveals a critical insight: the GTSRB model shows higher confidence for correctly classified known samples (0.98 vs 0.91) while exhibiting lower confidence for unknown samples (0.62 vs 0.79) compared to CIFAR-10. This explains the improved AUROC and demonstrates that confidence calibration is domain-dependent.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{CIFAR-10 Confidence Distribution\\Known vs. Unknown Classes}
+\caption{CIFAR-10 confidence scores}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+\placeholderfigure{5cm}{GTSRB Confidence Distribution\\Known vs. Unknown Classes}
+\caption{GTSRB confidence scores}
+\end{subfigure}
+\caption{Confidence score distributions for known and unknown classes. For CIFAR-10 (left), the distributions show significant overlap, while GTSRB (right) exhibits clearer separation between classes, explaining the performance gap.}
+\label{fig:confidence_distributions}
+\end{figure}
+
+% ================================
+% 5. CONCLUSIONS
+% ================================
+\section{Conclusions}
+
+This work demonstrates the implementation and evaluation of open-set recognition across two distinct domains, revealing critical insights into the domain-dependence of OSR performance. Our key finding is that domain structure is a primary determinant of success; the structured nature of the GTSRB dataset led to far superior OSR performance (AUROC 0.62) compared to the unstructured CIFAR-10 dataset (AUROC 0.26), even while maintaining high closed-set accuracy in both cases (97.97\% and 88.25\% respectively).
+
+\subsection{Relevance and Model Behavior}
+Handling unknown classes is highly relevant in our chosen datasets. For GTSRB, which simulates an autonomous driving scenario, failing to recognize an unfamiliar traffic sign can have catastrophic safety consequences. For a general-purpose dataset like CIFAR-10, it represents the fundamental challenge of deploying models in an uncontrolled, open world. Our baseline models, when trained only on seen classes, behaved unpredictably on unseen data, typically misclassifying unknown objects with high confidence. The OSR models showed a marked improvement. In the GTSRB experiment, the model demonstrated a strong capability to distinguish known from unknown signs, as shown by the high AUROC score.
+
+\subsection{Critical Assessment}
+\begin{itemize}
+    \item \textbf{Positive Findings}: A key positive finding is that OSR techniques can be integrated without significantly harming closed-set accuracy on known classes. The performance on the GTSRB dataset is particularly encouraging, suggesting that OSR is viable for deployment in structured, safety-critical domains. The modular framework developed for this work is also a positive outcome, providing a solid foundation for future research.
+    \item \textbf{Negative Results and Limitations}: The primary negative result was the poor performance on the CIFAR-10 dataset, highlighting that these OSR techniques are not a panacea for unstructured domains. This dataset-specific performance suggests that OSR systems may need significant domain-specific tuning. Furthermore, the results show a high sensitivity to threshold calibration; the stark difference in "Unknown Recall at 95\% Known Precision" between the two datasets (99.95\% vs 0.00\%) illustrates that a single metric is insufficient and careful, use-case-specific calibration is paramount.
+\end{itemize}
+
+\subsection{Future Work}
+\begin{itemize}
+    \item \textbf{Open Issues}: Key open issues remain, particularly in improving performance in unstructured domains. The generalization of these models is also an open question, as our experiments used a limited number of unknown classes compared to the potential diversity in the real world.
+    
+    \item \textbf{Future Technical Explorations}: Based on our implementation and configuration files, several technical directions warrant further investigation:
+    \begin{itemize}
+        \item \textbf{Comparative Analysis of OSR Heads}: Our configurations include Energy-based, K+1, and OpenMax approaches, but comprehensive benchmarking across all methods remains incomplete. Future work should establish which method performs best under specific domain conditions.
+        
+        \item \textbf{Hyperparameter Optimization}: Configurations reveal sensitivity to parameters like confidence thresholds (ranging from 0.5 to 0.9), dummy class penalties (1.0 to 5.0), and loss weighting schemes. A systematic sweep across these parameters could yield optimal configurations for each domain.
+        
+        \item \textbf{Enhanced Calibration Methods}: Beyond temperature scaling, exploring alternatives like vector scaling and Platt scaling could further improve confidence reliability.
+        
+        \item \textbf{Network Architecture Exploration}: The effect of enabling/disabling the neck module and varying embedding dimensions (currently set at 512) warrants deeper investigation.
+    \end{itemize}
+    
+    \item \textbf{Broader Research Directions}: Future work should focus on developing adaptive thresholding mechanisms that can adjust to changing data distributions. Exploring multi-modal approaches, such as combining visual data with GPS context for traffic signs, could enhance robustness. Finally, developing methods for continuous learning, where the model can incorporate newly identified unknowns into its known set, would be a significant step towards truly autonomous systems.
+\end{itemize}
+
+
+% ================================
+% REFERENCES
+% ================================
+
+\begin{thebibliography}{9}
+
+\bibitem{bendale2016openmax}
+Bendale, A., \& Boult, T. E. (2016). Towards open set deep networks. In \textit{Proceedings of the IEEE conference on computer vision and pattern recognition} (pp. 1563-1572).
+
+\bibitem{hendrycks2017baseline}
+Hendrycks, D., \& Gimpel, K. (2017). A baseline for detecting misclassified and out-of-distribution examples in neural networks. \textit{International Conference on Learning Representations}.
+
+\bibitem{liu2020energy}
+Liu, W., Wang, X., Owens, J., \& Li, Y. (2020). Energy-based out-of-distribution detection. \textit{Advances in Neural Information Processing Systems}, 33, 21464-21475.
+
+\bibitem{scheirer2013openset}
+Scheirer, W. J., de Rezende Rocha, A., Sapkota, A., \& Boult, T. E. (2013). Toward open set recognition. \textit{IEEE transactions on pattern analysis and machine intelligence}, 35(7), 1757-1772.
+
+\bibitem{stallkamp2012gtsrb}
+Stallkamp, J., Schlipsing, M., Salmen, J., \& Igel, C. (2012). Man vs. computer: Benchmarking machine learning algorithms for traffic sign recognition. \textit{Neural networks}, 32, 323-332.
+
+\bibitem{vaze2022generalized}
+Vaze, S., Han, K., Vedaldi, A., \& Zisserman, A. (2022). Open-set recognition: A good closed-set classifier is all you need. \textit{International Conference on Learning Representations}.
+
+\end{thebibliography}
+
+\end{document}

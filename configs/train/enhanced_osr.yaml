@@ -1,0 +1,58 @@
+# Enhanced training configuration for Open-Set Recognition experiments
+# Supports multiple loss strategies and dummy class training
+
+optimizer:
+  name: "AdamW"
+  lr: 1e-4
+  weight_decay: 1e-5
+
+scheduler:
+  name: "CosineAnnealingLR"
+  params:
+    T_max: 50
+
+trainer:
+  max_epochs: 50
+  gpus: 1
+  precision: 32
+  enable_model_summary: True
+  enable_checkpointing: True
+  log_every_n_steps: 50
+  
+  # Training/validation limiting for quick testing
+  limit_train_batches: null  # null means no limit
+  limit_val_batches: null    # null means no limit
+  limit_test_batches: null   # null means no limit
+  
+  # Progress bar and logging
+  enable_progress_bar: True
+  logger: True
+
+# Enhanced loss configuration supporting multiple strategies
+loss:
+  strategy: "threshold"  # threshold, penalty, combined - overridden by experiment configs
+  ce_seen_weight: 1.0
+  
+  # Threshold-based loss parameters
+  threshold_params:
+    confidence_threshold: 0.6
+    
+  # Penalty-based loss parameters  
+  penalty_params:
+    dummy_penalty_factor: 2.0
+    
+  # Combined loss parameters
+  combined_params:
+    confidence_threshold: 0.6
+    dummy_penalty_factor: 2.0
+    threshold_weight: 0.5
+    penalty_weight: 0.5
+
+# Training with unknown samples
+unknown_training:
+  enabled: True
+  unknown_ratio: 0.3  # Ratio of unknown samples in training batches
+
+calibration:
+  method: "temperature_scaling"
+  val_fraction_for_calibration: 0.2

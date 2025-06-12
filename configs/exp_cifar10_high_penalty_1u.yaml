@@ -1,0 +1,81 @@
+# Experiment 4: CIFAR-10 with High Penalty Parameter Testing (1 unknown class)
+# Testing effect of varying penalty parameter
+defaults:
+  - dataset: cifar10_1u
+  - model: resnet50_enhanced
+  - train: enhanced_base
+  - eval: base
+  - _self_
+
+dataset:
+  name: cifar10
+  path: ./data
+  img_size: 32
+  num_classes: 9  # 9 known classes
+  num_known_classes: 9
+  total_original_classes: 10
+  known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]  # 9 known
+  unknown_classes_original_ids: [9]  # 1 unknown
+  batch_size: 128
+  num_workers: 4
+  val_split_ratio: 0.2
+
+model:
+  type: "enhanced_openset_resnet50"
+  d_embed: 512
+
+  backbone:
+    name: "resnet50"
+    pretrained: True
+    frozen: False
+    num_output_features: 2048
+
+  neck:
+    enabled: True  # With neck for this experiment
+    in_features: ${model.backbone.num_output_features}
+    out_features: ${model.d_embed}
+    use_batchnorm: True
+    use_relu: True
+    
+  cls_head:
+    in_features: ${model.d_embed}
+    use_weight_norm: True
+    label_smoothing: 0.1
+    temperature: 1.0
+
+train:
+  optimizer:
+    name: "AdamW"
+    lr: 0.001
+    weight_decay: 0.01
+
+  scheduler:
+    name: "CosineAnnealingLR"
+    params:
+      T_max: 50
+
+  trainer:
+    max_epochs: 50
+    gpus: 1
+    precision: 32
+    deterministic: True
+
+  loss:
+    strategy: "penalty"  # Use penalty approach
+    dummy_class_penalty: 4.0   # Very high penalty for testing
+    ce_seen_weight: 1.0
+    dummy_loss_weight: 1.0
+    use_dummy_class: True
+
+  calibration:
+    method: "temperature_scaling"
+
+  run_test_after_train: True
+  run_custom_evaluation_after_train: True
+
+seed: 42
+outputs_root_dir: "outputs"
+data_root_dir: "data/processed"
+
+# Experiment identifier
+experiment_name: "cifar10_high_penalty_1u_with_neck"

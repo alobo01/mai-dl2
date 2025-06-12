@@ -1,0 +1,20 @@
+# CIFAR-10 dataset configuration with 1 unknown class
+# 9 known classes, 1 unknown class for enhanced OSR experiments
+
+name: cifar10
+path: ./data
+img_size: 32
+num_classes: 9  # 9 known classes
+num_known_classes: 9
+total_original_classes: 10
+known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7, 8]  # 9 known
+unknown_classes_original_ids: [9]  # 1 unknown
+batch_size: 128
+num_workers: 4
+val_split_ratio: 0.2
+
+# Enhanced OSR settings
+enhanced_settings:
+  include_unknown_in_training: true
+  unknown_training_ratio: 0.3
+  dummy_class_enabled: true

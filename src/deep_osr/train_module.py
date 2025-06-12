@@ -12,11 +12,14 @@ from deep_osr.losses.ce import get_loss_functions # Simpler: LabelSmoothingCross
 from deep_osr.open_set_metrics import OpenSetMetrics
 from deep_osr.utils.calibration import calibrate_model_temperature
 
-class OpenSetLightningModule(pl.LightningModule):
+class OpenSetLightningModule(pl.LightningModule):    
     def __init__(self, cfg: DictConfig):
         super().__init__()
-        self.save_hyperparameters(cfg) # Saves cfg to self.hparams
         self.cfg = cfg
+        # self.save_hyperparameters(cfg) # Old way
+        self.save_hyperparameters()    # New way - saves {'cfg': cfg_object}
+
+        self.model_name = cfg.model.type
 
         # 1. Backbone
         self.backbone, backbone_out_dim = get_backbone(

@@ -1,17 +1,12 @@
 name: cifar10
 path: ${data_root_dir}/cifar10 # torchvision will download here
-num_classes: 10 # Total classes in original dataset
-known_classes: [0, 1, 2, 3, 4, 5, 6, 7] # e.g., airplane to horse
-unknown_classes: [8, 9] # e.g., ship, truck
+num_classes: 8
 num_known_classes: 8
-
-img_size: 32
-batch_size: 128
+total_original_classes: 10
+known_classes_original_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+unknown_classes_original_ids: [8, 9]
 num_workers: 4
 
-# For actual file-based splits (not used in CIFAR10 example directly, but good structure)
-# train_split_file: "data/splits/train.txt"
-# val_known_split_file: "data/splits/val_known.txt"
-# val_unknown_split_file: "data/splits/val_unknown.txt"
-# test_known_split_file: "data/splits/test_known.txt"
-# test_unknown_split_file: "data/splits/test_unknown.txt"
+# Augmentations
+img_size: 32
+batch_size: 128
