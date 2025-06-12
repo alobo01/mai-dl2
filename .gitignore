@@ -30,4 +30,4 @@ saved_models/
 .idea/
 .DS_Store
 
-*.ppm
+data/gtsrf/*.ppm
