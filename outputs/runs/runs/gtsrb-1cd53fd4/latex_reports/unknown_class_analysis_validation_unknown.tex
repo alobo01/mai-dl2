@@ -1,0 +1,48 @@
+\documentclass{article}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\title{Unknown Class Prediction Analysis (Validation Unknown)}
+\date{\today}
+\author{Automated Report}
+\begin{document}
+\maketitle
+\section*{Distribution of Predictions for Unknown Inputs}
+Unknown inputs were predicted by the model (trained on known classes) as follows:
+\begin{tabular}{lrr}
+\toprule
+ & Count & Percentage \\
+Predicted Known Class (Original ID) &  &  \\
+\midrule
+1 & 2 & 0.21% \\
+3 & 2 & 0.21% \\
+5 & 6 & 0.63% \\
+6 & 42 & 4.42% \\
+8 & 1 & 0.11% \\
+9 & 4 & 0.42% \\
+10 & 1 & 0.11% \\
+11 & 5 & 0.53% \\
+12 & 16 & 1.68% \\
+13 & 3 & 0.32% \\
+15 & 2 & 0.21% \\
+18 & 1 & 0.11% \\
+20 & 20 & 2.11% \\
+21 & 3 & 0.32% \\
+25 & 7 & 0.74% \\
+26 & 2 & 0.21% \\
+30 & 6 & 0.63% \\
+31 & 2 & 0.21% \\
+32 & 56 & 5.89% \\
+33 & 609 & 64.11% \\
+34 & 160 & 16.84% \\
+\bottomrule
+\end{tabular}
+\section*{Confidence and Entropy for Unknown Inputs}
+\begin{tabular}{rrrrr}
+\toprule
+Avg Max Softmax & Std Max Softmax & Avg Entropy & Std Entropy & Total Unknown Samples \\
+\midrule
+0.758 & 0.167 & 1.167 & 0.498 & 950 \\
+\bottomrule
+\end{tabular}
+\end{document}
