@@ -1,0 +1,1 @@
+Get-Content .\experiment_configs.txt | % { python -m src.deep_osr.train --config-name "experiments\$($_)" train.trainer.max_epochs=30 train.trainer.gpus=0 }
